@@ -164,7 +164,6 @@ export default {
           }
 
           if (
-            item.userInfo.username.toLowerCase().includes(searchText) ||
             item.title.toLowerCase().includes(searchText) ||
             item.description.toLowerCase().includes(searchText) ||
             item.tags.some((tag) => tag.toLowerCase().includes(searchText)) ||
@@ -176,6 +175,7 @@ export default {
           }
         });
       } catch (error) {
+        console.log(error);
         this.apiResponseSnackBar = { status: error.response.status };
       }
 
