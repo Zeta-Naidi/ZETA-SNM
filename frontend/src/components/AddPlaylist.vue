@@ -4,139 +4,147 @@
       <v-card-title v-if="isEditMode"> Update the Playlist </v-card-title>
       <v-card-title v-else> Create a new Playlist </v-card-title>
       <v-card-text>
-        <v-row>
-          <v-col style="padding: 1px">
-            <v-text-field
-              v-model="newPlaylist.title"
-              label="Playlist Title"
-              class="ma-2"
-              hide-details
-            ></v-text-field>
-          </v-col>
-        </v-row>
+        <v-form v-model="form" @submit.prevent="onSubmit">
+          <v-row>
+            <v-col style="padding: 1px">
+              <v-text-field
+                v-model="newPlaylist.title"
+                label="Playlist Title"
+                class="ma-2"
+                hide-details
+                :rules="[rules.required]"
+              ></v-text-field>
+            </v-col>
+          </v-row>
 
-        <v-row>
-          <v-col style="padding: 1px">
-            <v-text-field
-              v-model="tagInput"
-              @keydown.enter="addTag()"
-              label="Aggiungere un elemento e premere Invio"
-              class="ma-2"
-              hide-details
-            ></v-text-field>
-          </v-col>
-          <v-col style="padding: 1px">
-            <v-select
-              v-model="newPlaylist.tags"
-              :items="newPlaylist.tags"
-              label="Elementi aggiunti"
-              multiple
-              class="ma-2"
-              hide-details
-            >
-              <template v-slot:selection="{ item, index }">
-                <v-chip color="primary">
-                  <template v-slot:append>
-                    <v-icon @click.stop="removeTag(item, index)">
-                      fas fa-xmark
-                    </v-icon>
-                  </template>
-                  {{ item.title }}
-                </v-chip>
+          <v-row>
+            <v-col style="padding: 1px">
+              <v-text-field
+                v-model="tagInput"
+                @keydown.enter="addTag()"
+                label="Aggiungere un elemento e premere Invio"
+                class="ma-2"
+                hide-details
+              ></v-text-field>
+            </v-col>
+            <v-col style="padding: 1px">
+              <v-select
+                v-model="newPlaylist.tags"
+                :items="newPlaylist.tags"
+                label="Elementi aggiunti"
+                multiple
+                class="ma-2"
+                hide-details
+              >
+                <template v-slot:selection="{ item, index }">
+                  <v-chip color="primary">
+                    <template v-slot:append>
+                      <v-icon @click.stop="removeTag(item, index)">
+                        fas fa-xmark
+                      </v-icon>
+                    </template>
+                    {{ item.title }}
+                  </v-chip>
+                </template>
+              </v-select>
+            </v-col>
+          </v-row>
+
+          <v-row>
+            <v-col style="padding: 1px">
+              <v-text-field
+                v-model="newPlaylist.description"
+                hide-details
+                label="Playlist Description"
+                class="ma-2"
+                :rules="[rules.required]"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+          <br />
+
+          <v-list
+            v-if="newPlaylist.tracks"
+            style="max-height: 10rem; overflow: auto"
+          >
+            <v-list-subheader>SELECTED TRACKS</v-list-subheader>
+
+            <v-list-item v-for="track in newPlaylist.tracks">
+              <template v-slot:prepend>
+                <v-icon @click="removeTrackFromSelection(track)"
+                  >fas fa-xmark</v-icon
+                >
               </template>
-            </v-select>
-          </v-col>
-        </v-row>
 
-        <v-row>
-          <v-col style="padding: 1px">
-            <v-text-field
-              v-model="newPlaylist.description"
-              hide-details
-              label="Playlist Description"
-              class="ma-2"
-            ></v-text-field>
-          </v-col>
-        </v-row>
-        <br />
+              <v-list-item-title v-text="track.name"></v-list-item-title>
 
-        <v-list
-          v-if="newPlaylist.tracks"
-          style="max-height: 10rem; overflow: auto"
-        >
-          <v-list-subheader>SELECTED TRACKS</v-list-subheader>
+              <template v-slot:append>
+                <v-chip style="margin: 1rem" label
+                  >Duration: {{ formattedDuration(track.duration_ms) }}</v-chip
+                >
 
-          <v-list-item v-for="track in newPlaylist.tracks">
-            <template v-slot:prepend>
-              <v-icon @click="removeTrackFromSelection(track)"
-                >fas fa-xmark</v-icon
-              >
+                <v-chip
+                  style="margin: 1rem"
+                  label
+                  v-for="artist in track.artists"
+                  >Artist: {{ artist.name }}</v-chip
+                >
+              </template>
+            </v-list-item>
+          </v-list>
+
+          <br />
+          <v-row>
+            <v-col>
+              <v-text-field
+                v-model="query"
+                hide-details
+                placeholder="Search title, artist..."
+                class="ma-2"
+                density="compact"
+              ></v-text-field>
+            </v-col>
+          </v-row>
+          <v-data-table-server
+            v-model:items-per-page="itemsPerPage"
+            :headers="headers"
+            :items-length="totalItems"
+            :items="serverItems"
+            :loading="loading"
+            :search="search"
+            class="elevation-1"
+            item-value="id"
+            v-model="newPlaylist.tracks"
+            show-select
+            return-object=""
+            @update:options="loadItems"
+          >
+            <template v-slot:item.img="{ item }">
+              <v-img
+                v-if="
+                  item.selectable.type === 'track' &&
+                  item.selectable.album.images
+                "
+                :src="item.selectable.album.images[0].url"
+                width="50"
+              ></v-img>
             </template>
 
-            <v-list-item-title v-text="track.name"></v-list-item-title>
-
-            <template v-slot:append>
-              <v-chip style="margin: 1rem" label
-                >Duration: {{ formattedDuration(track.duration_ms) }}</v-chip
-              >
-
-              <v-chip style="margin: 1rem" label v-for="artist in track.artists"
-                >Artist: {{ artist.name }}</v-chip
-              >
+            <template v-slot:item.artists="{ item }">
+              <v-chip v-for="artist in item.selectable.artists">{{
+                artist.name
+              }}</v-chip>
             </template>
-          </v-list-item>
-        </v-list>
 
-        <br />
-        <v-row>
-          <v-col>
-            <v-text-field
-              v-model="query"
-              hide-details
-              placeholder="Search title, artist..."
-              class="ma-2"
-              density="compact"
-            ></v-text-field>
-          </v-col>
-        </v-row>
-        <v-data-table-server
-          v-model:items-per-page="itemsPerPage"
-          :headers="headers"
-          :items-length="totalItems"
-          :items="serverItems"
-          :loading="loading"
-          :search="search"
-          class="elevation-1"
-          item-value="id"
-          v-model="newPlaylist.tracks"
-          show-select
-          return-object=""
-          @update:options="loadItems"
-        >
-          <template v-slot:item.img="{ item }">
-            <v-img
-              v-if="
-                item.selectable.type === 'track' && item.selectable.album.images
-              "
-              :src="item.selectable.album.images[0].url"
-              width="50"
-            ></v-img>
-          </template>
+            <template v-slot:item.date="{ item }">
+              {{ item.selectable.album.release_date }}
+            </template>
 
-          <template v-slot:item.artists="{ item }">
-            <v-chip v-for="artist in item.selectable.artists">{{
-              artist.name
-            }}</v-chip>
-          </template>
-
-          <template v-slot:item.date="{ item }">
-            {{ item.selectable.album.release_date }}
-          </template>
-
-          <template v-slot:no-data>
-            <v-btn color="primary" @click="resetTableElemets">Reset</v-btn>
-          </template>
-        </v-data-table-server>
+            <template v-slot:no-data>
+              <v-btn color="primary" @click="resetTableElemets">Reset</v-btn>
+            </template>
+          </v-data-table-server>
+        </v-form>
       </v-card-text>
 
       <v-card-actions>
@@ -151,7 +159,11 @@
             >
           </v-col>
           <v-col>
-            <v-btn variant="tonal" color="primary" @click="savePlaylist"
+            <v-btn
+              :disabled="!form"
+              variant="tonal"
+              color="primary"
+              @click="savePlaylist"
               >Save</v-btn
             >
           </v-col>
@@ -203,9 +215,20 @@ export default {
       },
       tagInput: "",
       isEditMode: false, // Added to determine if in edit mode or create mode
+      rules: {
+        required: (value) => !!value || "Field is required",
+      },
+      form: false,
     };
   },
   methods: {
+    onSubmit() {
+      if (!this.form) return;
+
+      this.loading = true;
+
+      setTimeout(() => (this.loading = false), 2000);
+    },
     addTag() {
       if (this.tagInput.trim() !== "") {
         this.newPlaylist.tags.push(this.tagInput);

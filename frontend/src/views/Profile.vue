@@ -1,12 +1,13 @@
 <template>
   <h1>User Profile</h1>
-  <v-form @submit.prevent="updateUserData">
+  <v-form @submit.prevent="updateUserData" v-model="form">
     <v-row>
       <v-col>
         <v-text-field
           v-model="userData.email"
           label="Email"
           clearable
+          :rules="[rules.required]"
         ></v-text-field>
       </v-col>
       <v-col>
@@ -14,6 +15,7 @@
           v-model="userData.username"
           label="Username"
           clearable
+          :rules="[rules.required]"
         ></v-text-field>
       </v-col>
       <v-col>
@@ -27,7 +29,7 @@
 
     <v-row>
       <v-col>
-        <v-btn type="submit">Aggiorna</v-btn>
+        <v-btn type="submit" :disabled="!form">Aggiorna</v-btn>
       </v-col>
       <v-spacer></v-spacer>
       <v-col style="display: flex; justify-content: flex-end">
@@ -57,6 +59,10 @@ export default {
         password: "",
       },
       apiResponseSnackBar: null,
+      rules: {
+        required: (value) => !!value || "Field is required",
+      },
+      form: false,
     };
   },
   mounted() {
