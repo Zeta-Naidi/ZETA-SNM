@@ -58,6 +58,10 @@
                   </div>
                 </v-col>
               </v-row>
+              <br />
+              <br />
+              <br />
+              <br />
             </v-window-item>
             <v-window-item :value="2">
               <v-row>
@@ -116,6 +120,10 @@
                   </v-card-text>
                 </v-col>
               </v-row>
+              <br />
+              <br />
+              <br />
+              <br />
             </v-window-item>
           </v-window>
         </v-card>
